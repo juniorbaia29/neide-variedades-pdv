@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neide Variedades - PDV</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1050px; margin: 20px auto; padding: 10px; background: #f4f6f9; color: #333; }
+        h2 { text-align: center; color: #222; margin-top: 5px; }
+        h3 { margin-top: 0; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+        .box { background: white; border: 1px solid #ddd; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .full { grid-column: span 2; }
+        input, select, button { padding: 9px; margin: 5px 0; width: 100%; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; font-size: 14px; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #0056b3; }
+        .btn-venda { background-color: #28a745; font-size: 15px; padding: 12px; }
+        .btn-venda:hover { background-color: #218838; }
+        .btn-add-carrinho { background-color: #17a2b8; }
+        .btn-add-carrinho:hover { background-color: #138496; }
+        .btn-cancelar { background-color: #6c757d; }
+        .btn-cancelar:hover { background-color: #5a6268; }
+        .btn-mini { width: auto; padding: 5px 8px; font-size: 12px; margin: 2px; }
+        .btn-editar { background-color: #ffc107; color: #212529; }
+        .btn-editar:hover { background-color: #e0a800; }
+        .btn-excluir { background-color: #dc3545; }
+        .btn-excluir:hover { background-color: #c82333; }
+        .btn-quitar { background-color: #28a745; }
+        .btn-quitar:hover { background-color: #218838; }
+        .btn-export { width: auto; padding: 8px 12px; font-size: 13px; margin: 2px; }
+        .btn-excel { background-color: #1d6f42; }
+        .btn-pdf { background-color: #b30b00; }
+        .btn-backup { background-color: #6f42c1; }
+        .btn-restore { background-color: #fd7e14; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+        th { background-color: #f8f9fa; }
+        .alerta { color: red; font-weight: bold; }
+        .status-fiado { background: #fff3cd; color: #856404; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .status-pago { background: #d4edda; color: #155724; padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .foto-prod { width: 45px; height: 45px; object-fit: cover; border-radius: 5px; border: 1px solid #ccc; }
+        .preview-caixa { display: flex; align-items: center; gap: 15px; background: #f9f9f9; padding: 10px; border-radius: 6px; margin-top: 8px; border: 1px solid #e0e0e0; }
+        .preview-caixa img { width: 65px; height: 65px; object-fit: cover; border-radius: 6px; }
+        .carrinho-area { background: #fdfdfd; border: 1px dashed #bbb; padding: 12px; border-radius: 6px; margin-top: 12px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; margin-bottom: 10px; }
+        .header-flex h3 { border: none; margin: 0; padding: 0; }
+        .scroll-table { max-height: 320px; overflow-y: auto; }
+        .resumo-valores { display: flex; justify-content: flex-end; gap: 25px; margin-top: 15px; flex-wrap: wrap; }
+        @media (max-width: 700px) { .grid, .grid-3 { grid-template-columns: 1fr; } .full { grid-column: span 1; } }
+        @media print {
+            body { background: white; margin: 0; max-width: 100%; }
+            .no-print, button, input, select { display: none !important; }
+            .box { border: none; box-shadow: none; padding: 0; }
+            .scroll-table { max-height: none; overflow: visible; }
+        }
+    </style>
+</head>
+<body>
+
+<div style="text-align: center;" class="no-print">
+    <img src="logo01.jpeg" alt="Logo Neide Variedades" style="max-height: 150px;" onerror="this.style.display='none'">
+</div>
+
+<h2>Sistema de Vendas e Estoque (PDV) — Neide Variedades</h2>
+
+<div class="grid">
+    <!-- 1. CADASTRO DE PRODUTOS -->
+    <div class="box no-print">
+        <h3 id="tituloFormProd">1. Produtos e Estoque</h3>
+        <input type="hidden" id="prodEditIndex" value="-1">
+        <input type="text" id="prodNome" placeholder="Nome do produto">
+        <div class="grid">
+            <input type="number" id="prodPreco" placeholder="Preço de venda (R$)" step="0.01">
+            <input type="number" id="prodEstoque" placeholder="Qtd em estoque">
+        </div>
+        <label style="font-size: 13px; color: #555;">Foto do produto (opcional):</label>
+        <input type="file" id="prodFoto" accept="image/*">
+        <div style="display: flex; gap: 8px;">
+            <button type="button" id="btnSalvarProd" onclick="salvarProduto()">Cadastrar Produto</button>
+            <button type="button" id="btnCancelarProd" class="btn-cancelar" style="display: none;" onclick="cancelarEdicaoProduto()">Cancelar</button>
+        </div>
+        <input type="text" id="buscaProduto" placeholder="🔍 Buscar produto por nome..." onkeyup="atualizarTudo()" style="margin-top: 12px; background: #f8f9fa;">
+        <div class="scroll-table">
+            <table>
+                <thead>
+                    <tr><th>Foto</th><th>Produto</th><th>Preço</th><th>Estoque</th><th>Ações</th></tr>
+                </thead>
+                <tbody id="tabelaProdutos"></tbody>
+            </table>
+        </div>
+    </div>
+ <!-- 2. CADASTRO DE CLIENTES -->
+    <div class="box no-print">
+        <h3>2. Clientes</h3>
+        <input type="text" id="cliNome" placeholder="Nome do cliente">
+        <input type="text" id="cliTelefone" placeholder="Telefone / WhatsApp">
+        <button type="button" onclick="salvarCliente()">Cadastrar Cliente</button>
+        <div class="scroll-table">
+            <table>
+                <thead><tr><th>Nome</th><th>Telefone</th><th>Ação</th></tr></thead>
+                <tbody id="tabelaClientes"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 3. CAIXA / CARRINHO DE COMPRAS -->
+    <div class="box full no-print">
+        <h3>3. Caixa — Carrinho de Vendas</h3>
+        <div class="grid-3">
+            <div>
+                <label>Produto:</label>
+                <select id="vendaProduto" onchange="mostrarPreviewCaixa()"></select>
+            </div>
+            <div>
+                <label>Quantidade:</label>
+                <input type="number" id="vendaQtd" value="1" min="1">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="button" class="btn-add-carrinho" onclick="adicionarAoCarrinho()">+ Adicionar ao Carrinho</button>
+            </div>
+        </div>
+
+        <div id="previewProduto" class="preview-caixa" style="display: none;">
+            <img id="previewImg" src="" alt="Produto">
+            <div>
+                <strong id="previewNome"></strong><br>
+                <span id="previewDetalhes" style="font-size: 13px; color: #555;"></span>
+            </div>
+        </div>
+
+        <div class="carrinho-area">
+            <strong>Itens da Venda Atual:</strong>
+            <table>
+                <thead>
+                    <tr><th>Produto</th><th>Preço Un.</th><th>Qtd</th><th>Subtotal</th><th>Remover</th></tr>
+                </thead>
+                <tbody id="tabelaCarrinho">
+                    <tr><td colspan="5" style="text-align:center; color:#888;">Carrinho vazio</td></tr>
+                </tbody>
+            </table>
+            <div style="text-align: right; margin-top: 10px; font-size: 16px;">
+                Total do Carrinho: <strong style="color: #007bff;">R$ <span id="totalCarrinho">0.00</span></strong>
+            </div>
+        </div>
+
+        <div class="grid" style="margin-top: 12px;">
+            <div>
+                <label>Cliente:</label>
+                <select id="vendaCliente"></select>
+            </div>
+            <div>
+                <label>Forma de Pagamento:</label>
+                <select id="vendaPagamento">
+                    <option value="Pix">Pix</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    <option value="Cartão de Débito">Cartão de Débito</option>
+                    <option value="Fiado">Fiado (A Prazo)</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" class="btn-venda" style="margin-top: 10px;" onclick="finalizarVenda()">Finalizar Venda e Baixar Estoque</button>
+    </div>
+
+    <!-- 4. HISTÓRICO DE CAIXA -->
+    <div class="box full">
+        <div class="header-flex">
+            <h3>4. Histórico de Vendas e Resumo do Caixa</h3>
+            <div class="no-print">
+                <button type="button" class="btn-export btn-backup" onclick="fazerBackup()">Salvar Backup</button>
+                <button type="button" class="btn-export btn-restore" onclick="document.getElementById('inputBackup').click()">Restaurar Backup</button>
+                <input type="file" id="inputBackup" accept=".json" style="display:none" onchange="restaurarBackup(event)">
+                <button type="button" class="btn-export btn-excel" onclick="exportarCSV()">Excel (CSV)</button>
+                <button type="button" class="btn-export btn-pdf" onclick="exportarPDF()">PDF</button>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Cliente</th>
+                    <th>Itens Vendidos</th>
+                    <th>Pagamento</th>
+                    <th>Total</th>
+                    <th class="no-print">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaVendas"></tbody>
+        </table>
+        <div class="resumo-valores">
+            <h3 style="color: #d97706; border: none; margin: 0;">A Receber (Fiado): R$ <span id="totalFiado">0.00</span></h3>
+            <h3 style="color: #28a745; border: none; margin: 0;">Total em Caixa: R$ <span id="totalCaixa">0.00</span></h3>
+        </div>
+    </div>
+</div> 
+<script>
+    function carregarBanco() {
+        try {
+            const p = localStorage.getItem('neide_produtos');
+            if (p !== null) {
+                return {
+                    produtos: JSON.parse(p) || [],
+                    clientes: JSON.parse(localStorage.getItem('neide_clientes')) || [],
+                    vendas: JSON.parse(localStorage.getItem('neide_vendas')) || []
+                };
+            }
+        } catch (e) {}
+        try {
+            if (window.name && window.name.startsWith('NEIDE_DB:')) {
+                return JSON.parse(window.name.replace('NEIDE_DB:', ''));
+            }
+        } catch (e) {}
+        return { produtos: [], clientes: [], vendas: [] };
+    }
+
+    let banco = carregarBanco();
+    let produtos = banco.produtos;
+    let clientes = banco.clientes;
+    let vendas = banco.vendas;
+    let carrinho = [];
+    const IMG_PADRAO = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+    function salvarDados() {
+        try {
+            localStorage.setItem('neide_produtos', JSON.stringify(produtos));
+            localStorage.setItem('neide_clientes', JSON.stringify(clientes));
+            localStorage.setItem('neide_vendas', JSON.stringify(vendas));
+        } catch (e) {}
+        try {
+            window.name = 'NEIDE_DB:' + JSON.stringify({ produtos: produtos, clientes: clientes, vendas: vendas });
+        } catch (e) {}
+    }
+
+    function salvarProduto() {
+        const index = parseInt(document.getElementById('prodEditIndex').value);
+        const nome = document.getElementById('prodNome').value.trim();
+        const preco = parseFloat(document.getElementById('prodPreco').value.replace(',', '.'));
+        const estoque = parseInt(document.getElementById('prodEstoque').value);
+        const fotoInput = document.getElementById('prodFoto');
+        const arquivoFoto = fotoInput.files ? fotoInput.files.item(0) : null;
+
+        if (!nome || isNaN(preco) || isNaN(estoque)) { alert("Preencha nome, preço e estoque corretamente."); return; }
+
+        const concluirCadastro = (fotoBase64) => {
+            if (index >= 0) {
+                produtos[index] = { nome: nome, preco: preco, estoque: estoque, foto: fotoBase64 !== null ? fotoBase64 : produtos[index].foto };
+                cancelarEdicaoProduto();
+            } else {
+                produtos.push({ nome: nome, preco: preco, estoque: estoque, foto: fotoBase64 || "" });
+                limparFormProduto();
+            }
+            salvarDados();
+            atualizarTudo();
+        };
+
+        if (arquivoFoto) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const max = 200;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > max) { h *= max / w; w = max; } }
+                    else { if (h > max) { w *= max / h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    concluirCadastro(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.onerror = function() { concluirCadastro(null); };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() { concluirCadastro(null); };
+            reader.readAsDataURL(arquivoFoto);
+        } else {
+            concluirCadastro(null);
+        }
+    }
+    function editarProduto(index) {
+        const p = produtos[index];
+        document.getElementById('prodEditIndex').value = index;
+        document.getElementById('prodNome').value = p.nome;
+        document.getElementById('prodPreco').value = p.preco;
+        document.getElementById('prodEstoque').value = p.estoque;
+        document.getElementById('tituloFormProd').innerText = "Editando Produto";
+        document.getElementById('btnSalvarProd').innerText = "Atualizar Produto";
+        document.getElementById('btnCancelarProd').style.display = "block";
+    }
+
+    function cancelarEdicaoProduto() {
+        document.getElementById('prodEditIndex').value = "-1";
+        document.getElementById('tituloFormProd').innerText = "1. Produtos e Estoque";
+        document.getElementById('btnSalvarProd').innerText = "Cadastrar Produto";
+        document.getElementById('btnCancelarProd').style.display = "none";
+        limparFormProduto();
+    }
+
+    function limparFormProduto() {
+        document.getElementById('prodNome').value = "";
+        document.getElementById('prodPreco').value = "";
+        document.getElementById('prodEstoque').value = "";
+        document.getElementById('prodFoto').value = "";
+    }
+
+    function excluirProduto(index) {
+        if (confirm("Deseja excluir este produto?")) { produtos.splice(index, 1); salvarDados(); atualizarTudo(); }
+    }
+
+    function salvarCliente() {
+        const nome = document.getElementById('cliNome').value.trim();
+        const telefone = document.getElementById('cliTelefone').value.trim();
+        if (!nome) { alert("Digite o nome do cliente."); return; }
+        clientes.push({ nome: nome, telefone: telefone });
+        document.getElementById('cliNome').value = "";
+        document.getElementById('cliTelefone').value = "";
+        salvarDados();
+        atualizarTudo();
+    }
+
+    function excluirCliente(index) {
+        if (confirm("Deseja excluir este cliente?")) { clientes.splice(index, 1); salvarDados(); atualizarTudo(); }
+    }
+
+    function mostrarPreviewCaixa() {
+        const idx = document.getElementById('vendaProduto').value;
+        const previewDiv = document.getElementById('previewProduto');
+        if (idx === "" || !produtos[idx]) { previewDiv.style.display = "none"; return; }
+        const p = produtos[idx];
+        document.getElementById('previewImg').src = p.foto || IMG_PADRAO;
+        document.getElementById('previewNome').innerText = p.nome;
+        document.getElementById('previewDetalhes').innerText = "Preço: R$ " + p.preco.toFixed(2) + " | Estoque: " + p.estoque + " un.";
+        previewDiv.style.display = "flex";
+    }
+
+    function adicionarAoCarrinho() {
+        const idx = document.getElementById('vendaProduto').value;
+        const qtd = parseInt(document.getElementById('vendaQtd').value);
+        if (idx === "" || !produtos[idx]) { alert("Selecione um produto válido."); return; }
+        if (isNaN(qtd) || qtd <= 0) { alert("Informe uma quantidade válida."); return; }
+
+        const prod = produtos[idx];
+        const itemExistente = carrinho.find(item => item.prodIndex == idx);
+        const qtdJaNoCarrinho = itemExistente ? itemExistente.qtd : 0;
+
+        if (qtd + qtdJaNoCarrinho > prod.estoque) { alert("Estoque insuficiente! Disponível: " + prod.estoque + " un."); return; }
+
+        if (itemExistente) { itemExistente.qtd += qtd; }
+        else { carrinho.push({ prodIndex: parseInt(idx), nome: prod.nome, preco: prod.preco, qtd: qtd }); }
+        document.getElementById('vendaQtd').value = 1;
+        renderizarCarrinho();
+    }
+
+    function removerDoCarrinho(i) { carrinho.splice(i, 1); renderizarCarrinho(); }
+
+    function renderizarCarrinho() {
+        const tbody = document.getElementById('tabelaCarrinho');
+        tbody.innerHTML = "";
+        let total = 0;
+
+        if (carrinho.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">Carrinho vazio</td></tr>';
+            document.getElementById('totalCarrinho').innerText = "0.00";
+            return;
+        }
+
+        carrinho.forEach((item, i) => {
+            const sub = item.preco * item.qtd;
+            total += sub;
+            tbody.innerHTML += '<tr><td>' + item.nome + '</td><td>R$ ' + item.preco.toFixed(2) + '</td><td>' + item.qtd + '</td><td>R$ ' + sub.toFixed(2) + '</td><td><button type="button" class="btn-mini btn-excluir" onclick="removerDoCarrinho(' + i + ')">X</button></td></tr>';
+        });
+        document.getElementById('totalCarrinho').innerText = total.toFixed(2);
+    }
+    function finalizarVenda() {
+        if (carrinho.length === 0) { alert("Adicione pelo menos um produto ao carrinho."); return; }
+
+        const cliente = document.getElementById('vendaCliente').value || "Consumidor Final";
+        const pagamento = document.getElementById('vendaPagamento').value;
+        if (pagamento === "Fiado" && cliente === "Consumidor Final") {
+            alert("Selecione um cliente cadastrado para registrar uma venda Fiado.");
+            return;
+        }
+
+        let totalVenda = 0;
+        let resumoItens = [];
+
+        carrinho.forEach(item => {
+            if (produtos[item.prodIndex]) { produtos[item.prodIndex].estoque -= item.qtd; }
+            totalVenda += item.preco * item.qtd;
+            resumoItens.push(item.qtd + "x " + item.nome);
+        });
+
+        const agora = new Date();
+        const dataHora = agora.toLocaleDateString('pt-BR') + ' ' + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+        vendas.unshift({
+            dataHora: dataHora,
+            cliente: cliente,
+            itens: resumoItens.join(', '),
+            pagamento: pagamento,
+            pago: pagamento !== "Fiado",
+            total: totalVenda
+        });
+        carrinho = [];
+        salvarDados();
+        renderizarCarrinho();
+        atualizarTudo();
+        alert("Venda registrada com sucesso!");
+    }
+
+    function quitarFiado(index) {
+        const forma = prompt("Qual a forma de pagamento recebida? (Ex: Pix, Dinheiro, Cartão)", "Pix");
+        if (forma) {
+            vendas[index].pago = true;
+            vendas[index].pagamento = "Fiado (Pago via " + forma + ")";
+            salvarDados();
+            atualizarTudo();
+        }
+    }
+
+    function excluirVenda(index) {
+        if (confirm("Deseja remover esta venda do histórico?")) { vendas.splice(index, 1); salvarDados(); atualizarTudo(); }
+    }
+
+    function fazerBackup() {
+        const dados = JSON.stringify({ produtos: produtos, clientes: clientes, vendas: vendas });
+        const blob = new Blob([dados], { type: 'application/json' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Backup_Neide_Variedades_" + new Date().toLocaleDateString('pt-BR').replace(/\//g, '-') + ".json";
+        link.click();
+    }
+
+    function restaurarBackup(event) {
+        const arquivo = event.target.files.item(0);
+        if (!arquivo) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const dados = JSON.parse(e.target.result);
+                if (dados.produtos && dados.clientes && dados.vendas) {
+                    produtos = dados.produtos;
+                    clientes = dados.clientes;
+                    vendas = dados.vendas;
+                    salvarDados();
+                    atualizarTudo();
+                    alert("Backup restaurado com sucesso!");
+                } else {
+                    alert("Arquivo de backup inválido.");
+                }
+            } catch (err) {
+                alert("Erro ao ler o arquivo de backup.");
+            }
+        };
+        reader.readAsText(arquivo);
+        event.target.value = "";
+    }
+
+    function exportarCSV() {
+        if (vendas.length === 0) { alert("Não há vendas para exportar."); return; }
+        let csv = "Data/Hora;Cliente;Itens Vendidos;Pagamento;Status;Total (R$)\n";
+        vendas.forEach(v => {
+            const status = v.pago === false ? "Pendente (Fiado)" : "Pago";
+            csv += '"' + v.dataHora + '";"' + v.cliente + '";"' + v.itens + '";"' + v.pagamento + '";"' + status + '";"' + v.total.toFixed(2).replace('.', ',') + '"\n';
+        });
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "Vendas_Neide_Variedades.csv";
+        link.click();
+    }
+
+    function exportarPDF() { window.print(); }
+
+    function atualizarTudo() {
+        const termoBusca = (document.getElementById('buscaProduto').value || "").toLowerCase();
+        const tbProd = document.getElementById('tabelaProdutos');
+        const selProd = document.getElementById('vendaProduto');
+        tbProd.innerHTML = "";
+        selProd.innerHTML = '<option value="">-- Selecione um produto --</option>';
+
+        produtos.forEach((p, i) => {
+            if (p.nome.toLowerCase().includes(termoBusca)) {
+                const alertaEstoque = p.estoque <= 3 ? 'alerta' : '';
+                tbProd.innerHTML += '<tr><td><img src="' + (p.foto || IMG_PADRAO) + '" class="foto-prod"></td><td>' + p.nome + '</td><td>R$ ' + p.preco.toFixed(2) + '</td><td class="' + alertaEstoque + '">' + p.estoque + ' un.</td><td><button type="button" class="btn-mini btn-editar" onclick="editarProduto(' + i + ')">Editar</button> <button type="button" class="btn-mini btn-excluir" onclick="excluirProduto(' + i + ')">X</button></td></tr>';
+            }
+            if (p.estoque > 0) {
+                selProd.innerHTML += '<option value="' + i + '">' + p.nome + ' — R$ ' + p.preco.toFixed(2) + ' (' + p.estoque + ' un.)</option>';
+            }
+        });
+
+        const tbCli = document.getElementById('tabelaClientes');
+        const selCli = document.getElementById('vendaCliente');
+        tbCli.innerHTML = "";
+        selCli.innerHTML = '<option value="Consumidor Final">Consumidor Final</option>';
+
+        clientes.forEach((c, i) => {
+            tbCli.innerHTML += '<tr><td>' + c.nome + '</td><td>' + (c.telefone || '-') + '</td><td><button type="button" class="btn-mini btn-excluir" onclick="excluirCliente(' + i + ')">X</button></td></tr>';
+            selCli.innerHTML += '<option value="' + c.nome + '">' + c.nome + '</option>';
+        });
+
+        const tbVendas = document.getElementById('tabelaVendas');
+        tbVendas.innerHTML = "";
+        let totalRecebido = 0;
+        let totalPendente = 0;
+
+        vendas.forEach((v, i) => {
+            const isFiadoPendente = v.pago === false;
+            if (isFiadoPendente) { totalPendente += v.total; }
+            else { totalRecebido += v.total; }
+
+            const badge = isFiadoPendente ? '<span class="status-fiado">Fiado (Pendente)</span>' : '<span class="status-pago">' + v.pagamento + '</span>';
+            const btnQuitar = isFiadoPendente ? '<button type="button" class="btn-mini btn-quitar" onclick="quitarFiado(' + i + ')">Receber</button> ' : '';
+
+            tbVendas.innerHTML += '<tr><td>' + v.dataHora + '</td><td>' + v.cliente + '</td><td>' + v.itens + '</td><td>' + badge + '</td><td><strong>R$ ' + v.total.toFixed(2) + '</strong></td><td class="no-print">' + btnQuitar + '<button type="button" class="btn-mini btn-excluir" onclick="excluirVenda(' + i + ')">X</button></td></tr>';
+        });
+
+        document.getElementById('totalFiado').innerText = totalPendente.toFixed(2);
+        document.getElementById('totalCaixa').innerText = totalRecebido.toFixed(2);
+        mostrarPreviewCaixa();
+    }
+
+    atualizarTudo();
+</script>
+</body>
+</html>
